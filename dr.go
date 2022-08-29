@@ -61,13 +61,14 @@ func main() {
 
 	if trigger == "put" {
 
-		filedate := os.Args[2]
+		service := os.Args[2]
+		filedate := os.Args[3]
 
 		if filedate == "CURDATE" {
 			filedate = Lib.GetDate("2006-01-02")
 		}
 
-		put(filedate)
+		put(service, filedate)
 
 	} else if trigger == "reckon" {
 
@@ -167,7 +168,7 @@ func reckon(trxdate string, serviceid string) {
 	}
 }
 
-func put(filedate string) {
+func put(service string, filedate string) {
 
 	files, err := ioutil.ReadDir(DR_PATH)
 	if err != nil {
@@ -181,116 +182,122 @@ func put(filedate string) {
 
 		m.Lock()
 
-		if !SQL.IsDRAlreadyProcessed(DB, CFG.TblSourceDRFilename, filedate, f.Name()) {
+		filebase := Lib.Concat(service, "_", strings.Replace(filedate, "-", "", -1))
 
-			//fmt.Println(f.Name())
-			data, _ := Lib.ReadGzFile(DR_PATH + "/" + f.Name())
+		if strings.Contains(f.Name(), filebase) {
 
-			//split line
-			ldata := strings.Split(string(data), "\n")
+			if !SQL.IsDRAlreadyProcessed(DB, CFG.TblSourceDRFilename, filedate, f.Name()) {
 
-			i := 0
-			buffer := 50
-			sqlString := ""
+				//fmt.Println(f.Name())
+				data, _ := Lib.ReadGzFile(DR_PATH + "/" + f.Name())
 
-			for _, line := range ldata {
+				//split line
+				ldata := strings.Split(string(data), "\n")
 
-				if line != "" {
+				i := 0
+				buffer := 50
+				sqlString := ""
 
-					var m1 sync.Mutex
+				for _, line := range ldata {
 
-					m1.Lock()
+					if line != "" {
 
-					fmt.Println(fmt.Sprintf("source %s, dr : %s, total line : %d", f.Name(), line, _f))
+						var m1 sync.Mutex
 
-					// split string
-					cdata := strings.Split(line, "|")
+						m1.Lock()
 
-					var sourceDR Items.SourceDR
-					sourceDR.Filedate = filedate
-					sourceDR.Filename = f.Name()
-					sourceDR.FR_DN_leg = cdata[0]
-					sourceDR.MessageId = cdata[1]
-					sourceDR.Recipient, _ = strconv.Atoi(cdata[2])
-					sourceDR.Sender, _ = strconv.Atoi(cdata[3])
-					sourceDR.MMStatus = cdata[4]
-					sourceDR.StatusCode = cdata[5]
-					sourceDR.StatusText = cdata[6]
-					sourceDR.NtType = cdata[7]
-					sourceDR.Channel = cdata[8]
-					sourceDR.MSISDN, _ = strconv.Atoi(cdata[9])
-					sourceDR.LinkedId = cdata[10]
-					sourceDR.SSSActionReport = cdata[11]
-					sourceDR.GMessageId = cdata[12]
+						fmt.Println(fmt.Sprintf("source %s, dr : %s, total line : %d", f.Name(), line, _f))
 
-					if sourceDR.GMessageId != "" {
-						gMsgId := strings.Split(sourceDR.GMessageId, "_")
+						// split string
+						cdata := strings.Split(line, "|")
 
-						runes := []rune(gMsgId[1])
-						sourceDR.GMessageIdDate = Lib.Concat(string(runes[0:4]), "-", string(runes[4:6]), "-", string(runes[6:8]))
-					} else {
+						var sourceDR Items.SourceDR
+						sourceDR.Filedate = filedate
+						sourceDR.Filename = f.Name()
+						sourceDR.FR_DN_leg = cdata[0]
+						sourceDR.MessageId = cdata[1]
+						sourceDR.Recipient, _ = strconv.Atoi(cdata[2])
+						sourceDR.Sender, _ = strconv.Atoi(cdata[3])
+						sourceDR.MMStatus = cdata[4]
+						sourceDR.StatusCode = cdata[5]
+						sourceDR.StatusText = cdata[6]
+						sourceDR.NtType = cdata[7]
+						sourceDR.Channel = cdata[8]
+						sourceDR.MSISDN, _ = strconv.Atoi(cdata[9])
+						sourceDR.LinkedId = cdata[10]
+						sourceDR.SSSActionReport = cdata[11]
+						sourceDR.GMessageId = cdata[12]
 
-						FileName := strings.Split(sourceDR.Filename, "_")
+						if sourceDR.GMessageId != "" {
+							gMsgId := strings.Split(sourceDR.GMessageId, "_")
 
-						runes := []rune(FileName[1])
-						sourceDR.GMessageIdDate = Lib.Concat(string(runes[0:4]), "-", string(runes[4:6]), "-", string(runes[6:8]))
+							runes := []rune(gMsgId[1])
+							sourceDR.GMessageIdDate = Lib.Concat(string(runes[0:4]), "-", string(runes[4:6]), "-", string(runes[6:8]))
+						} else {
+
+							FileName := strings.Split(sourceDR.Filename, "_")
+
+							runes := []rune(FileName[1])
+							sourceDR.GMessageIdDate = Lib.Concat(string(runes[0:4]), "-", string(runes[4:6]), "-", string(runes[6:8]))
+						}
+
+						sourceDR.UserServiceNo = cdata[13]
+						sourceDR.MessageSequenceId = cdata[14]
+						sourceDR.Bearer = cdata[15]
+						sourceDR.BillInfo = cdata[16]
+						sourceDR.ClassOfService = cdata[17]
+						sourceDR.Vpkgid = cdata[18]
+						sourceDR.Timestamp = cdata[19]
+						sourceDR.CCT, _ = strconv.Atoi(cdata[20])
+
+						//SQL.PutDR(DB, CFG.TblSourceDR, sourceDR)
+
+						sqlString += SQL.BufferInsertOnString(sourceDR)
+
+						if i == buffer {
+
+							sqlString = strings.TrimRight(sqlString, ",")
+
+							SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
+							sqlString = ""
+							i = 0
+						}
+
+						_f++
+						i++
+
+						m1.Unlock()
 					}
-
-					sourceDR.UserServiceNo = cdata[13]
-					sourceDR.MessageSequenceId = cdata[14]
-					sourceDR.Bearer = cdata[15]
-					sourceDR.BillInfo = cdata[16]
-					sourceDR.ClassOfService = cdata[17]
-					sourceDR.Vpkgid = cdata[18]
-					sourceDR.Timestamp = cdata[19]
-					sourceDR.CCT, _ = strconv.Atoi(cdata[20])
-
-					//SQL.PutDR(DB, CFG.TblSourceDR, sourceDR)
-
-					sqlString += SQL.BufferInsertOnString(sourceDR)
-
-					if i == buffer {
-
-						sqlString = strings.TrimRight(sqlString, ",")
-
-						SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
-						sqlString = ""
-						i = 0
-					}
-
-					_f++
-					i++
-
-					m1.Unlock()
 				}
+
+				if i > 0 {
+
+					sqlString = strings.TrimRight(sqlString, ",")
+
+					SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
+					sqlString = ""
+					i = 0
+
+				}
+
+				var drFile Items.SourceDRFilename
+				drFile.Filedate = filedate
+				drFile.Filename = f.Name()
+
+				SQL.PutDRFile(DB, CFG.TblSourceDRFilename, drFile)
+
+			} else {
+
+				fmt.Println("DR " + f.Name() + " already processed!")
 			}
 
-			if i > 0 {
+			// if Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
 
-				sqlString = strings.TrimRight(sqlString, ",")
+			// 	// Remove
+			os.Remove(DR_PATH + "/" + f.Name())
+			// }
 
-				SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
-				sqlString = ""
-				i = 0
-
-			}
-
-			var drFile Items.SourceDRFilename
-			drFile.Filedate = filedate
-			drFile.Filename = f.Name()
-
-			SQL.PutDRFile(DB, CFG.TblSourceDRFilename, drFile)
-
-		} else {
-
-			fmt.Println("DR " + f.Name() + " already processed!")
 		}
-
-		// if Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
-
-		// 	// Remove
-		os.Remove(DR_PATH + "/" + f.Name())
-		// }
 
 		m.Unlock()
 	}

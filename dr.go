@@ -80,6 +80,12 @@ func main() {
 		serviceid := os.Args[3]
 
 		reckon(trxdate, serviceid)
+
+	} else if trigger == "move" {
+
+		trxdate := os.Args[2]
+
+		move(trxdate)
 	}
 }
 
@@ -296,6 +302,36 @@ func put(filedate string) {
 				os.Remove(DR_PATH + "/" + f.Name())
 			}
 
+		}
+
+		m.Unlock()
+	}
+}
+
+func move(filedate string) {
+
+	files, err := ioutil.ReadDir(DR_PATH)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+
+		var m sync.Mutex
+
+		m.Lock()
+		if Lib.Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
+
+			if _, err := os.Stat(DESTINATION_DONE_DR + "/" + f.Name()); err == nil {
+
+				fmt.Printf("File exists then remove\n")
+
+				// 	// Remove
+				os.Remove(DR_PATH + "/" + f.Name())
+
+			} else {
+				fmt.Printf("File does not exist\n")
+			}
 		}
 
 		m.Unlock()

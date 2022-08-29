@@ -61,14 +61,14 @@ func main() {
 
 	if trigger == "put" {
 
-		service := os.Args[2]
-		filedate := os.Args[3]
+		filedate := os.Args[2]
+		service := os.Args[3]
 
 		if filedate == "CURDATE" {
 			filedate = Lib.GetDate("2006-01-02")
 		}
 
-		put(service, filedate)
+		put(filedate, service)
 
 	} else if trigger == "reckon" {
 
@@ -168,7 +168,7 @@ func reckon(trxdate string, serviceid string) {
 	}
 }
 
-func put(service string, filedate string) {
+func put(filedate string, service string) {
 
 	files, err := ioutil.ReadDir(DR_PATH)
 	if err != nil {
@@ -178,11 +178,18 @@ func put(service string, filedate string) {
 	_f := 0
 	for _, f := range files {
 
-		var m sync.Mutex
+		var (
+			m        sync.Mutex
+			filebase string
+		)
 
 		m.Lock()
 
-		filebase := Lib.Concat(service, "_", strings.Replace(filedate, "-", "", -1))
+		if service != "" {
+			filebase = Lib.Concat(service, "_", strings.Replace(filedate, "-", "", -1))
+		} else {
+			filebase = strings.Replace(filedate, "-", "", -1)
+		}
 
 		if strings.Contains(f.Name(), filebase) {
 
@@ -291,11 +298,11 @@ func put(service string, filedate string) {
 				fmt.Println("DR " + f.Name() + " already processed!")
 			}
 
-			// if Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
+			if Lib.Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
 
-			// 	// Remove
-			os.Remove(DR_PATH + "/" + f.Name())
-			// }
+				// 	// Remove
+				os.Remove(DR_PATH + "/" + f.Name())
+			}
 
 		}
 

@@ -64,7 +64,7 @@ func main() {
 		filedate := os.Args[2]
 
 		var service string
-		if os.Args[3] != "" {
+		if len(os.Args) == 3 {
 			service = os.Args[3]
 		}
 

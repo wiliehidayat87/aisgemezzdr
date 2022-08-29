@@ -1,0 +1,10 @@
+MYSQL:
+ HOST: "localhost"
+ PORT: 3306
+ USERNAME: "root"
+ PASSWORD: ""
+ DATABASE: "xmp"
+TABLE:
+ SOURCEDR: "xmp.source_dr"
+ SOURCEDRFILENAME: "xmp.source_dr_filename"
+ TRX: "xmp.trx"

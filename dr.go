@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -321,7 +320,7 @@ func move(filedate string) {
 		var m sync.Mutex
 
 		m.Lock()
-		if Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
+		if Lib.Copy(DR_PATH+"/"+f.Name(), DESTINATION_DONE_DR+"/"+f.Name()) {
 
 			if _, err := os.Stat(DESTINATION_DONE_DR + "/" + f.Name()); err == nil {
 
@@ -339,33 +338,4 @@ func move(filedate string) {
 
 		m.Unlock()
 	}
-}
-
-func Copy(srcFile, dstFile string) bool {
-	out, err := os.Create(dstFile)
-	if err != nil {
-
-		fmt.Printf("File destination failed to create : %s\n", dstFile)
-		return false
-	}
-
-	defer out.Close()
-
-	in, err := os.Open(srcFile)
-	defer in.Close()
-	if err != nil {
-
-		fmt.Printf("File source failed to open : %s\n", srcFile)
-		return false
-	}
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-
-		fmt.Printf("Copy stream failed : %#v\n", err)
-
-		return false
-	}
-
-	return true
 }

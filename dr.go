@@ -279,9 +279,12 @@ func put(filedate string) {
 
 					sqlString = strings.TrimRight(sqlString, ",")
 
-					SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
-					sqlString = ""
-					i = 0
+					if sqlString != "" {
+
+						SQL.MultiPutDR(DB, CFG.TblSourceDR, sqlString)
+						sqlString = ""
+						i = 0
+					}
 
 				}
 

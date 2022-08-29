@@ -63,16 +63,11 @@ func main() {
 
 		filedate := os.Args[2]
 
-		var service string
-		if len(os.Args) > 3 {
-			service = os.Args[3]
-		}
-
 		if filedate == "CURDATE" {
 			filedate = Lib.GetDate("2006-01-02")
 		}
 
-		put(filedate, service)
+		put(filedate)
 
 	} else if trigger == "reckon" {
 
@@ -172,7 +167,7 @@ func reckon(trxdate string, serviceid string) {
 	}
 }
 
-func put(filedate string, service string) {
+func put(filedate string) {
 
 	files, err := ioutil.ReadDir(DR_PATH)
 	if err != nil {
@@ -182,18 +177,11 @@ func put(filedate string, service string) {
 	_f := 0
 	for _, f := range files {
 
-		var (
-			m        sync.Mutex
-			filebase string
-		)
+		var m sync.Mutex
 
 		m.Lock()
 
-		if service != "" {
-			filebase = Lib.Concat(service, "_", strings.Replace(filedate, "-", "", -1))
-		} else {
-			filebase = strings.Replace(filedate, "-", "", -1)
-		}
+		filebase := strings.Replace(filedate, "-", "", -1)
 
 		if strings.Contains(f.Name(), filebase) {
 

@@ -334,7 +334,7 @@ func move(filedate string) {
 				fmt.Printf("File does not exist\n")
 			}
 		} else {
-			fmt.Printf("File failed to copy\n")
+			fmt.Printf("File failed to copy : %s\n", DR_PATH+"/"+f.Name())
 		}
 
 		m.Unlock()

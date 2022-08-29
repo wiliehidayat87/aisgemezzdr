@@ -62,7 +62,11 @@ func main() {
 	if trigger == "put" {
 
 		filedate := os.Args[2]
-		service := os.Args[3]
+
+		var service string
+		if os.Args[3] != "" {
+			service = os.Args[3]
+		}
 
 		if filedate == "CURDATE" {
 			filedate = Lib.GetDate("2006-01-02")

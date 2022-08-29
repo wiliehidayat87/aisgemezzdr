@@ -344,6 +344,8 @@ func move(filedate string) {
 func Copy(srcFile, dstFile string) bool {
 	out, err := os.Create(dstFile)
 	if err != nil {
+
+		fmt.Printf("File destination failed to create : %s\n", dstFile)
 		return false
 	}
 
@@ -352,11 +354,16 @@ func Copy(srcFile, dstFile string) bool {
 	in, err := os.Open(srcFile)
 	defer in.Close()
 	if err != nil {
+
+		fmt.Printf("File source failed to open : %s\n", srcFile)
 		return false
 	}
 
 	_, err = io.Copy(out, in)
 	if err != nil {
+
+		fmt.Printf("Copy stream failed : %#v\n", err)
+
 		return false
 	}
 

@@ -145,9 +145,9 @@ func SelectGroupSourceDR(db *sql.DB, tableSRCDR string, tableTrx string, filedat
 		count++
 	}
 
-	// fmt.Println(
-	// 	fmt.Sprintf("SelectFromSourceDR - query: %s, return: %d, err: %#v", SQL, count, err),
-	// )
+	fmt.Println(
+		fmt.Sprintf("SelectFromSourceDR - query: %s, return: %d, err: %#v", SQL, count, err),
+	)
 
 	return row, count
 }

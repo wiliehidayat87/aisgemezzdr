@@ -108,9 +108,9 @@ func PutDRFile(db *sql.DB, table string, dr Items.SourceDRFilename) {
 	}
 }
 
-func SelectGroupSourceDR(db *sql.DB, tableSRCDR string, tableTrx string, filedate string, serviceid string) ([]Items.SourceDR, int) {
+func SelectGroupSourceDR(db *sql.DB, tableSRCDR string, tableTrx string, filedate string, serviceid string, subject string) ([]Items.SourceDR, int) {
 
-	SQL := fmt.Sprintf(`SELECT t.* FROM (SELECT fr_dn_leg, cct, gmessageid_date, sender, mmstatus, statuscode, statustext, channel, sssactionreport, HOUR(timestamp) AS time_attempt, COUNT(1) AS total FROM `+tableSRCDR+` WHERE filedate = '%s' AND gmessageid_date = '%s' AND msisdn IN (SELECT msisdn FROM `+tableTrx+` WHERE msgtimestamp BETWEEN '%s 00:00:00' AND '%s 23:59:59' AND service_id = '%s' AND SUBJECT = 'RENEWAL' AND price <> 0) GROUP BY fr_dn_leg, cct, gmessageid_date, sender, mmstatus, statuscode, statustext, channel, sssactionreport, time_attempt) AS t ORDER BY t.fr_dn_leg DESC;`, filedate, filedate, filedate, filedate, serviceid)
+	SQL := fmt.Sprintf(`SELECT t.* FROM (SELECT fr_dn_leg, cct, gmessageid_date, sender, mmstatus, statuscode, statustext, channel, sssactionreport, HOUR(timestamp) AS time_attempt, COUNT(1) AS total FROM `+tableSRCDR+` WHERE filedate = '%s' AND gmessageid_date = '%s' AND msisdn IN (SELECT msisdn FROM `+tableTrx+` WHERE msgtimestamp BETWEEN '%s 00:00:00' AND '%s 23:59:59' AND service_id = '%s' AND SUBJECT = '%s' AND price <> 0) GROUP BY fr_dn_leg, cct, gmessageid_date, sender, mmstatus, statuscode, statustext, channel, sssactionreport, time_attempt) AS t ORDER BY t.fr_dn_leg DESC;`, filedate, filedate, filedate, filedate, serviceid, subject)
 
 	rows, err := db.Query(SQL)
 	if err != nil {
@@ -152,11 +152,11 @@ func SelectGroupSourceDR(db *sql.DB, tableSRCDR string, tableTrx string, filedat
 	return row, count
 }
 
-func SelectFromSourceDR(db *sql.DB, st Items.SourceDR) ([]Items.SourceDR, int) {
+func SelectFromSourceDR(db *sql.DB, st Items.SourceDR, subject string) ([]Items.SourceDR, int) {
 
 	service_id := strconv.Itoa(st.Sender)
 
-	SQL := fmt.Sprintf(`SELECT id, messageid, msisdn FROM %s WHERE filedate = '%s' AND gmessageid_date = '%s' AND fr_dn_leg = '%s' and cct = %d AND sender = %d AND statuscode = '%s' AND statustext = '%s' AND channel = '%s' AND mmstatus = '%s' AND sssactionreport = '%s' AND HOUR(timestamp) = '%s' AND msisdn IN (SELECT msisdn FROM %s WHERE msgtimestamp BETWEEN '%s 00:00:00' AND '%s 23:59:59' AND service_id = '%s' AND SUBJECT = 'RENEWAL' AND price <> 0)`, st.TblSourceDR, st.Filedate, st.Filedate, st.FR_DN_leg, st.CCT, st.Sender, st.StatusCode, st.StatusText, st.Channel, st.MMStatus, st.SSSActionReport, st.Timestamp, st.TblTrx, st.Filedate, st.Filedate, service_id)
+	SQL := fmt.Sprintf(`SELECT id, messageid, msisdn FROM %s WHERE filedate = '%s' AND gmessageid_date = '%s' AND fr_dn_leg = '%s' and cct = %d AND sender = %d AND statuscode = '%s' AND statustext = '%s' AND channel = '%s' AND mmstatus = '%s' AND sssactionreport = '%s' AND HOUR(timestamp) = '%s' AND msisdn IN (SELECT msisdn FROM %s WHERE msgtimestamp BETWEEN '%s 00:00:00' AND '%s 23:59:59' AND service_id = '%s' AND SUBJECT = '%s' AND price <> 0)`, st.TblSourceDR, st.Filedate, st.Filedate, st.FR_DN_leg, st.CCT, st.Sender, st.StatusCode, st.StatusText, st.Channel, st.MMStatus, st.SSSActionReport, st.Timestamp, st.TblTrx, st.Filedate, st.Filedate, service_id, subject)
 
 	rows, err := db.Query(SQL)
 	if err != nil {
@@ -242,7 +242,7 @@ func GetTrx(db *sql.DB, table string, trxdate string, serviceid string, msisdn i
 	return row, count
 }
 
-func UpdateTrx(db *sql.DB, t Items.SourceDR, s string) {
+func UpdateTrx(db *sql.DB, t Items.SourceDR, s string, subject string) {
 
 	var (
 		SQL          string
@@ -261,7 +261,7 @@ func UpdateTrx(db *sql.DB, t Items.SourceDR, s string) {
 			msgtimestamp = fmt.Sprintf("msgtimestamp BETWEEN '%s 15:00:00' AND '%s 23:59:59'", t.Filedate, t.Filedate)
 		}
 
-		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = 'FR', msgstatus = '%s', fr_closereason = '%s' WHERE `+msgtimestamp+` AND service_id = '%s' AND subject = 'RENEWAL' AND msgstatus = 'SENT' AND price <> 0 AND msisdn IN (%s)`, t.TblTrx, t.MsgStatus, t.StatusText, service_id, s)
+		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = 'FR', msgstatus = '%s', fr_closereason = '%s' WHERE `+msgtimestamp+` AND service_id = '%s' AND subject = '%s' AND msgstatus = 'SENT' AND price <> 0 AND msisdn IN (%s)`, t.TblTrx, t.MsgStatus, t.StatusText, service_id, subject, s)
 
 	} else if t.FR_DN_leg == "DN" {
 
@@ -275,7 +275,7 @@ func UpdateTrx(db *sql.DB, t Items.SourceDR, s string) {
 
 		dn := Lib.Concat(t.MMStatus, "|", t.StatusCode, "|", t.StatusText)
 
-		SQL = fmt.Sprintf(`UPDATE %s SET msgstatus = '%s', dn_closereason = '%s' WHERE msg_type = 'FR' AND `+msgtimestamp+` AND service_id = '%s' AND subject = 'RENEWAL' AND price <> 0 AND msisdn IN (%s)`, t.TblTrx, t.MsgStatus, dn, service_id, s)
+		SQL = fmt.Sprintf(`UPDATE %s SET msgstatus = '%s', dn_closereason = '%s' WHERE msg_type = 'FR' AND `+msgtimestamp+` AND service_id = '%s' AND subject = '%s' AND price <> 0 AND msisdn IN (%s)`, t.TblTrx, t.MsgStatus, dn, service_id, subject, s)
 	}
 
 	res, err := db.Exec(SQL)

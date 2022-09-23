@@ -79,8 +79,9 @@ func main() {
 
 		serviceid := os.Args[3]
 		subject := os.Args[4]
+		yesterday, _ := strconv.ParseBool(os.Args[5])
 
-		reckon(trxdate, serviceid, subject)
+		reckon(trxdate, serviceid, subject, yesterday)
 
 	} else if trigger == "move" {
 
@@ -90,11 +91,11 @@ func main() {
 	}
 }
 
-func reckon(trxdate string, serviceid string, subject string) {
+func reckon(trxdate string, serviceid string, subject string, yesterday bool) {
 
 	// Case reckoning should index all correlative selected column
 	// Get Group by per all status DR
-	srcGroup, totR := SQL.SelectGroupSourceDR(DB, CFG.TblSourceDR, CFG.TblTrx, trxdate, serviceid, subject)
+	srcGroup, totR := SQL.SelectGroupSourceDR(DB, CFG.TblSourceDR, CFG.TblTrx, trxdate, serviceid, subject, yesterday)
 
 	if totR > 0 {
 
@@ -123,7 +124,7 @@ func reckon(trxdate string, serviceid string, subject string) {
 			}
 
 			// Select per status DR
-			src, totalRecord := SQL.SelectFromSourceDR(DB, st, subject)
+			src, totalRecord := SQL.SelectFromSourceDR(DB, st, subject, yesterday)
 
 			if totalRecord > 0 {
 
@@ -150,7 +151,7 @@ func reckon(trxdate string, serviceid string, subject string) {
 
 						sqlString = strings.TrimRight(sqlString, ",")
 
-						SQL.UpdateTrx(DB, st, sqlString, subject)
+						SQL.UpdateTrx(DB, st, sqlString, subject, yesterday)
 						sqlString = ""
 						i = 0
 					}
@@ -162,7 +163,7 @@ func reckon(trxdate string, serviceid string, subject string) {
 
 					sqlString = strings.TrimRight(sqlString, ",")
 
-					SQL.UpdateTrx(DB, st, sqlString, subject)
+					SQL.UpdateTrx(DB, st, sqlString, subject, yesterday)
 					sqlString = ""
 					i = 0
 

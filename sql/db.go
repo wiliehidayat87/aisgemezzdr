@@ -319,3 +319,143 @@ func UpdateTrx(db *sql.DB, t Items.SourceDR, s string, subject string, yesterday
 
 	}
 }
+
+func GetDRPullSchedules(db *sql.DB) []items.DRPullSchedules {
+
+	SQL := fmt.Sprintf(`SELECT id, subject, dr_pull_date, start_time, end_time, types, tbl FROM aisnew.dr_pull_schedules WHERE status = 0 AND push_time <= NOW()`)
+
+	rows, err := db.Query(SQL)
+	if err != nil {
+		// handle this error better than this
+		fmt.Println(
+			fmt.Sprintf("GetDRPullSchedules - error [%#v] query : %s", err, SQL),
+		)
+	}
+	defer rows.Close()
+
+	var drs []items.DRPullSchedules
+
+	for rows.Next() {
+
+		var dr items.DRPullSchedules
+
+		err = rows.Scan(&dr.Id, &dr.Subject, &dr.DRPullDate, &dr.StartTime, &dr.EndTime, &dr.Types, &dr.Tbl)
+
+		if err != nil {
+
+			fmt.Println(
+				fmt.Sprintf("GetDRPullSchedules - Failed to process this filtering: %#v", err),
+			)
+
+		}
+
+		drs = append(drs, dr)
+	}
+
+	fmt.Println(
+		fmt.Sprintf("GetDRPullSchedules - query: %s, return: %#v", SQL, drs),
+	)
+
+	return drs
+}
+
+func UpdateStatusSchedules(db *sql.DB, dr items.DRPullSchedules) {
+
+	SQL := fmt.Sprintf(`UPDATE aisnew.dr_pull_schedules SET status = %d WHERE id = %d`, dr.Status, dr.Id)
+
+	res, err := db.Exec(SQL)
+
+	if err != nil {
+
+		fmt.Println(
+			fmt.Sprintf("UpdateStatusSchedules - error [%#v] query : %s", err, SQL),
+		)
+
+		panic(err)
+
+	} else {
+
+		count, err := res.RowsAffected()
+
+		fmt.Println(
+			fmt.Sprintf("UpdateStatusSchedules - query: %s, return: %d, err: %#v", SQL, count, err),
+		)
+
+	}
+}
+
+func GetFromSourceDR(db *sql.DB, st Items.SourceDR) ([]Items.SourceDR, int) {
+
+	SQL := fmt.Sprintf(`SELECT msisdn, fr_dn_leg, mmstatus, statuscode, statustext FROM aisnew.source_dr WHERE filedate = '%s' AND timestamp BETWEEN '%s' AND '%s';`, st.Filedate, st.StartTime, st.EndTime)
+
+	rows, err := db.Query(SQL)
+	if err != nil {
+		fmt.Println(
+			fmt.Sprintf("GetFromSourceDR - error [%#v] query : %s", err, SQL),
+		)
+	}
+	defer rows.Close()
+
+	var row []Items.SourceDR
+
+	count := 0
+
+	for rows.Next() {
+
+		var t Items.SourceDR
+
+		err = rows.Scan(&t.MSISDN, &t.FR_DN_leg, &t.MMStatus, &t.StatusCode, &t.StatusText)
+
+		if err != nil {
+
+			fmt.Println(
+				fmt.Sprintf("SelectFromSourceDR - Failed to process this filtering: %#v", err),
+			)
+
+		}
+
+		row = append(row, t)
+
+		count++
+	}
+
+	fmt.Println(
+		fmt.Sprintf("SelectFromSourceDR - query: %s, return: %d, err: %#v", SQL, count, err),
+	)
+
+	return row, count
+}
+
+func PullUpdate(db *sql.DB, dr items.DataDR) {
+
+	var SQL string
+
+	if dr.FRDNLeg == "FR" {
+
+		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', fr_closereason = '%s' WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT(%s, ' ', %s) AND (%s, ' ', %s) AND (msgstatus != "DELIVERED" AND dn_closereason != "Retrieved|1000|external:DELIVRD:000") AND msisdn = '%d'`, dr.Tbl, "FR", "FAILED", dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
+
+	} else {
+
+		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', dn_closereason = CONCAT(%s,"|",%s,"|",%s) WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT(%s, ' ', %s) AND (%s, ' ', %s) AND msisdn = '%d';`, dr.Tbl, "FR", "DELIVERED", dr.MMStatus, dr.StatusCode, dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
+	}
+
+	res, err := db.Exec(SQL)
+
+	if err != nil {
+
+		fmt.Println(
+			fmt.Sprintf("PullUpdate - error [%#v] query : %s", err, SQL),
+		)
+
+		panic(err)
+
+	} else {
+
+		count, err := res.RowsAffected()
+
+		fmt.Println(
+			fmt.Sprintf("PullUpdate - query: %s, return: %d, err: %#v", SQL, count, err),
+		)
+
+	}
+}

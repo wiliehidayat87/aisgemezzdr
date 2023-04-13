@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  rabbit1:
+    image: lucifer8591/rabbitmq-server:3.7.17
+    container_name: rabbitAISGemezz
+    hostname: rabbit1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=adminxmp
+      - RABBITMQ_DEFAULT_PASS=xmp2022
+    volumes:
+        - ~/.docker-conf/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq

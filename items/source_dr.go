@@ -31,6 +31,8 @@ type (
 		MsgStatus         string
 		TblSourceDR       string
 		TblTrx            string
+		StartTime         string
+		EndTime           string
 	}
 
 	SourceDRs struct {
@@ -41,6 +43,31 @@ type (
 		Id       int
 		Filedate string
 		Filename string
+	}
+
+	DRPullSchedules struct {
+		Id         int
+		Subject    string
+		DRPullDate string
+		StartTime  string
+		EndTime    string
+		ExePull    string
+		Status     int
+		Types      string
+		Tbl        string
+	}
+
+	DataDR struct {
+		Msisdn     int    `json:"msisdn"`
+		FRDNLeg    string `json:"frdnleg"`
+		MMStatus   string `json:"mmstatus"`
+		StatusCode string `json:"statuscode"`
+		StatusText string `json:"statustext"`
+		Tbl        string `json:"tbl"`
+		TrxDate    string `json:"trxdate"`
+		Subject    string `json:"subject"`
+		StartTime  string `json:"starttime"`
+		EndTime    string `json:"endtime"`
 	}
 )
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	Conf "aisgemezzdr/config"
 	Items "aisgemezzdr/items"
@@ -16,6 +18,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	Lib "github.com/wiliehidayat87/mylib"
+	"github.com/wiliehidayat87/rmqp"
 )
 
 var (
@@ -24,6 +27,7 @@ var (
 	APP_PATH            string
 	DR_PATH             string
 	DESTINATION_DONE_DR string
+	Rabbit              rmqp.AMQP
 )
 
 func init() {
@@ -83,12 +87,165 @@ func main() {
 
 		reckon(trxdate, serviceid, subject, yesterday)
 
+	} else if trigger == "push_update" {
+
+		pushUpdate()
+
+	} else if trigger == "pull_update" {
+
+		pullUpdate()
+
 	} else if trigger == "move" {
 
 		trxdate := os.Args[2]
 
 		move(trxdate)
 	}
+}
+
+func pushUpdate() {
+
+	// Setup Rabbit MQ Connection URL
+	Rabbit.SetAmqpURL(
+		"localhost",
+		15672,
+		"adminxmp",
+		"xmp2022",
+	)
+
+	// Setup Rabbit MQ Connection
+	Rabbit.SetUpConnectionAmqp()
+
+	// Setup Rabbit MQ Connection Channel
+	Rabbit.SetUpChannel("direct", false, "E_DR", true, "Q_DR")
+
+	timeDuration := time.Duration(1)
+
+	for {
+
+		// Setup / Init the log
+		drs := SQL.GetDRPullSchedules(DB)
+
+		if len(drs) > 0 {
+
+			for _, dr := range drs {
+
+				// Update setting status on process
+				SQL.UpdateStatusSchedules(DB, Items.DRPullSchedules{Id: dr.Id, Status: 1})
+
+				pushUpdateData(dr)
+
+				// Update setting status done
+				SQL.UpdateStatusSchedules(DB, Items.DRPullSchedules{Id: dr.Id, Status: 2})
+			}
+
+		}
+
+		// Request per 1 minute
+		time.Sleep(timeDuration * time.Minute)
+	}
+}
+
+func pushUpdateData(dr Items.DRPullSchedules) {
+
+	var m sync.Mutex
+
+	m.Lock()
+
+	srcGroup, totR := SQL.GetFromSourceDR(DB, Items.SourceDR{Filedate: dr.DRPullDate, StartTime: dr.StartTime, EndTime: dr.EndTime})
+
+	if totR > 0 {
+
+		for _, sdr := range srcGroup {
+
+			corId := Lib.Concat("DRS", Lib.GetUniqId())
+
+			reqBody, _ := json.Marshal(Items.DataDR{
+				Msisdn:     sdr.MSISDN,
+				FRDNLeg:    sdr.FR_DN_leg,
+				MMStatus:   sdr.MMStatus,
+				StatusCode: sdr.StatusCode,
+				StatusText: sdr.StatusText,
+				Tbl:        dr.Tbl,
+				TrxDate:    dr.DRPullDate,
+				StartTime:  dr.StartTime,
+				EndTime:    dr.EndTime,
+			})
+
+			request := string(reqBody)
+
+			eName := "E_DR"
+			qName := "Q_DR"
+
+			isPublished := Rabbit.IntegratePublish(
+				qName,
+				eName,
+				"application/json",
+				corId,
+				request,
+			)
+
+			if isPublished {
+
+				fmt.Println(fmt.Sprintf("[v] Published into %s: %s, Data: %s ...", qName, corId, request))
+
+			} else {
+
+				fmt.Println(fmt.Sprintf("[v] Failed published %s: %s, Data: %s ...", qName, corId, request))
+
+			}
+
+		}
+
+	} else {
+
+		fmt.Println(
+			fmt.Sprintf("No DR to push"),
+		)
+	}
+
+	defer m.Unlock()
+}
+
+func pullUpdate() {
+
+	timeDuration := time.Duration(1)
+
+	qName := "Q_DR"
+	eName := "E_DR"
+
+	// Setup Rabbit Queue Data
+	messagesData := Rabbit.Subscribe(1, false, qName, eName, qName)
+
+	// Loop forever listening incoming data
+	forever := make(chan bool)
+
+	// Set into goroutine this listener
+	go func() {
+
+		// Loop every incoming data
+		for d := range messagesData {
+
+			var dr Items.DataDR
+
+			json.Unmarshal(d.Body, &dr)
+
+			// Update DR
+			SQL.PullUpdate(DB, dr)
+
+			// Manual consume queue
+			d.Ack(false)
+
+			// Listener waiting ticker
+			time.Sleep(timeDuration * time.Millisecond)
+		}
+
+	}()
+
+	fmt.Println("[*] Waiting for data...")
+
+	<-forever
+
 }
 
 func reckon(trxdate string, serviceid string, subject string, yesterday bool) {

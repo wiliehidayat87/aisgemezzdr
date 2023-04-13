@@ -178,8 +178,8 @@ func pushUpdateData(dr Items.DRPullSchedules) {
 			qName := "Q_DR"
 
 			isPublished := Rabbit.IntegratePublish(
-				qName,
 				eName,
+				qName,
 				"application/json",
 				corId,
 				request,

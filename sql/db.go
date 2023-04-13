@@ -322,7 +322,7 @@ func UpdateTrx(db *sql.DB, t Items.SourceDR, s string, subject string, yesterday
 
 func GetDRPullSchedules(db *sql.DB) []items.DRPullSchedules {
 
-	SQL := fmt.Sprintf(`SELECT id, subject, dr_pull_date, start_time, end_time, types, tbl FROM aisnew.dr_pull_schedules WHERE status = 0 AND push_time <= NOW()`)
+	SQL := fmt.Sprintf(`SELECT id, subject, dr_pull_date, start_time, end_time, types, tbl FROM aisnew.dr_pull_schedules WHERE status = 0 AND exe_pull <= NOW()`)
 
 	rows, err := db.Query(SQL)
 	if err != nil {

@@ -436,7 +436,7 @@ func PullUpdate(db *sql.DB, dr items.DataDR) {
 
 	} else {
 
-		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', dn_closereason = '%s|%s|%s' WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT('%s', ' ', '%s') AND ('%s', ' ', '%s') AND msisdn = '%d';`, dr.Tbl, "FR", "DELIVERED", dr.MMStatus, dr.StatusCode, dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
+		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', dn_closereason = '%s|%s|%s' WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT('%s', ' ', '%s') AND CONCAT('%s', ' ', '%s') AND msisdn = '%d';`, dr.Tbl, "FR", "DELIVERED", dr.MMStatus, dr.StatusCode, dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
 	}
 
 	res, err := db.Exec(SQL)

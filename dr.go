@@ -211,8 +211,22 @@ func pullUpdate() {
 
 	timeDuration := time.Duration(1)
 
+	// Setup Rabbit MQ Connection URL
+	Rabbit.SetAmqpURL(
+		"localhost",
+		5672,
+		"adminxmp",
+		"xmp2022",
+	)
+
+	// Setup Rabbit MQ Connection
+	Rabbit.SetUpConnectionAmqp()
+
 	qName := "Q_DR"
 	eName := "E_DR"
+
+	// Setup Rabbit MQ Connection Channel
+	Rabbit.SetUpChannel("direct", false, eName, true, qName)
 
 	// Setup Rabbit Queue Data
 	messagesData := Rabbit.Subscribe(1, false, qName, eName, qName)

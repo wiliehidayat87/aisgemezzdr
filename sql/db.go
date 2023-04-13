@@ -432,7 +432,7 @@ func PullUpdate(db *sql.DB, dr items.DataDR) {
 
 	if dr.FRDNLeg == "FR" {
 
-		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', fr_closereason = '%s' WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT('%s', ' ', '%s') AND ('%s', ' ', '%s') AND (msgstatus != "DELIVERED" AND dn_closereason != "Retrieved|1000|external:DELIVRD:000") AND msisdn = '%d'`, dr.Tbl, "FR", "FAILED", dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
+		SQL = fmt.Sprintf(`UPDATE %s SET msg_type = '%s', msgstatus = '%s', fr_closereason = '%s' WHERE subject = '%s' AND msgtimestamp BETWEEN CONCAT('%s', ' ', '%s') AND CONCAT('%s', ' ', '%s') AND (msgstatus != "DELIVERED" AND dn_closereason != "Retrieved|1000|external:DELIVRD:000") AND msisdn = '%d'`, dr.Tbl, "FR", "FAILED", dr.StatusText, dr.Subject, dr.TrxDate, dr.StartTime, dr.TrxDate, dr.EndTime, dr.Msisdn)
 
 	} else {
 

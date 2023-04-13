@@ -35,9 +35,9 @@ func init() {
 
 	var err error
 
-	APP_PATH = strings.TrimSuffix(Lib.ReadASingleValueInFile(".env", "APP_PATH"), "\n")
-	DR_PATH = strings.TrimSuffix(Lib.ReadASingleValueInFile(".env", "DR_PATH"), "\n")
-	DESTINATION_DONE_DR = strings.TrimSuffix(Lib.ReadASingleValueInFile(".env", "DESTINATION_DONE_DR"), "\n")
+	APP_PATH = "/xmp/th/aisgemezzdr"
+	DR_PATH = "/xmp/th/aisgemezzdr/data"
+	DESTINATION_DONE_DR = "/xmp/th/aisgemezzdr/done"
 
 	// Setup Database MYSQL
 	CFG.SetMySQL(APP_PATH)

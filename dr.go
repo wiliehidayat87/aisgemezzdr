@@ -247,6 +247,7 @@ func pushUpdateData(dr Items.DRPullSchedules) {
 			corId := Lib.Concat("DRS", Lib.GetUniqId())
 
 			reqBody, _ := json.Marshal(Items.DataDR{
+				Subject:    dr.Subject,
 				Msisdn:     sdr.MSISDN,
 				FRDNLeg:    sdr.FR_DN_leg,
 				MMStatus:   sdr.MMStatus,

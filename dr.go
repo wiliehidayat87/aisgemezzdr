@@ -108,7 +108,7 @@ func pushUpdate() {
 	// Setup Rabbit MQ Connection URL
 	Rabbit.SetAmqpURL(
 		"localhost",
-		15672,
+		5672,
 		"adminxmp",
 		"xmp2022",
 	)

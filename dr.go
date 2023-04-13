@@ -17,6 +17,7 @@ import (
 	SQL "aisgemezzdr/sql"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/urfave/cli/v2"
 	Lib "github.com/wiliehidayat87/mylib"
 	"github.com/wiliehidayat87/rmqp"
 )
@@ -61,46 +62,131 @@ func init() {
 }
 func main() {
 
-	trigger := os.Args[1]
+	app := &cli.App{
+		EnableBashCompletion: true,
+		Commands: []*cli.Command{
+			{
+				Name:    "PUT",
+				Aliases: []string{"put"},
+				Usage:   "put dr data to database",
+				Action: func(cCtx *cli.Context) error {
 
-	if trigger == "put" {
+					filedate := cCtx.Args().Get(0)
 
-		filedate := os.Args[2]
+					if filedate == "CURDATE" {
+						filedate = Lib.GetDate("2006-01-02")
+					}
 
-		if filedate == "CURDATE" {
-			filedate = Lib.GetDate("2006-01-02")
-		}
+					put(filedate)
 
-		put(filedate)
+					return nil
+				},
+			},
+			{
+				Name:    "RECKON",
+				Aliases: []string{"reckon"},
+				Usage:   "reckon data source dr and trx data",
+				Action: func(cCtx *cli.Context) error {
 
-	} else if trigger == "reckon" {
+					trxdate := cCtx.Args().Get(0)
 
-		trxdate := os.Args[2]
+					if trxdate == "CURDATE" {
+						trxdate = Lib.GetDate("2006-01-02")
+					}
 
-		if trxdate == "CURDATE" {
-			trxdate = Lib.GetDate("2006-01-02")
-		}
+					serviceid := cCtx.Args().Get(1)
+					subject := cCtx.Args().Get(2)
+					yesterday, _ := strconv.ParseBool(cCtx.Args().Get(3))
 
-		serviceid := os.Args[3]
-		subject := os.Args[4]
-		yesterday, _ := strconv.ParseBool(os.Args[5])
+					reckon(trxdate, serviceid, subject, yesterday)
 
-		reckon(trxdate, serviceid, subject, yesterday)
+					return nil
+				},
+			},
+			{
+				Name:    "PUSH_UPDATE",
+				Aliases: []string{"push_update"},
+				Usage:   "Push data to rabbit mq",
+				Action: func(cCtx *cli.Context) error {
 
-	} else if trigger == "push_update" {
+					pushUpdate()
 
-		pushUpdate()
+					return nil
+				},
+			},
+			{
+				Name:    "PULL_UPDATE",
+				Aliases: []string{"pull_update"},
+				Usage:   "Pull data from rabbit mq",
+				Action: func(cCtx *cli.Context) error {
 
-	} else if trigger == "pull_update" {
+					pullUpdate()
 
-		pullUpdate()
+					return nil
+				},
+			},
+			{
+				Name:    "MOVE",
+				Aliases: []string{"move"},
+				Usage:   "move data",
+				Action: func(cCtx *cli.Context) error {
 
-	} else if trigger == "move" {
+					trxdate := cCtx.Args().Get(0)
 
-		trxdate := os.Args[2]
+					move(trxdate)
 
-		move(trxdate)
+					return nil
+				},
+			},
+		},
 	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+
+	//trigger := os.Args[1]
+
+	/*
+		if trigger == "put" {
+
+			filedate := os.Args[2]
+
+			if filedate == "CURDATE" {
+				filedate = Lib.GetDate("2006-01-02")
+			}
+
+			put(filedate)
+
+		} else if trigger == "reckon" {
+
+			trxdate := os.Args[2]
+
+			if trxdate == "CURDATE" {
+				trxdate = Lib.GetDate("2006-01-02")
+			}
+
+			serviceid := os.Args[3]
+			subject := os.Args[4]
+			yesterday, _ := strconv.ParseBool(os.Args[5])
+
+			reckon(trxdate, serviceid, subject, yesterday)
+
+		} else if trigger == "push_update" {
+
+			pushUpdate()
+
+		} else if trigger == "pull_update" {
+
+			pullUpdate()
+
+		} else if trigger == "move" {
+
+			trxdate := os.Args[2]
+
+			move(trxdate)
+		}
+	*/
 }
 
 func pushUpdate() {

@@ -327,6 +327,10 @@ func pullUpdate() {
 		// Loop every incoming data
 		for d := range messagesData {
 
+			var m sync.Mutex
+
+			m.Lock()
+
 			var dr Items.DataDR
 
 			json.Unmarshal(d.Body, &dr)
@@ -338,6 +342,8 @@ func pullUpdate() {
 
 			// Manual consume queue
 			d.Ack(false)
+
+			defer m.Unlock()
 
 			// Listener waiting ticker
 			time.Sleep(timeDuration * time.Millisecond)

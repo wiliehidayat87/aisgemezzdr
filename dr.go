@@ -244,6 +244,8 @@ func pullUpdate() {
 
 			json.Unmarshal(d.Body, &dr)
 
+			fmt.Println(fmt.Sprintf("Data: %#v ...", dr))
+
 			// Update DR
 			SQL.PullUpdate(DB, dr)
 

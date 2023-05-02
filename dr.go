@@ -99,10 +99,10 @@ func main() {
 
 						// Write into the log this worker
 						// Initiate the log
-						var log Lib.Logging
+						//var log Lib.Logging
 
 						// Setup / Init the log
-						log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
+						//log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
 
 						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
 						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)

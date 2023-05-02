@@ -42,8 +42,10 @@ func init() {
 	DESTINATION_DONE_DR = APP_PATH + "/done"
 
 	//initialze the current system time
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	timezone := "Asia/Jakarta"
+	loc, _ := time.LoadLocation(timezone)
 	time.Local = loc // -> this is setting the global timezone
+	os.Setenv("TZ", timezone)
 
 	// Setup Database MYSQL
 	CFG.SetMySQL(APP_PATH)

@@ -107,9 +107,13 @@ func main() {
 						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
 						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)
 
+						fmt.Printf("Now : %d, check: %d\n", now, check)
+
 						if now > check {
 
-							Shellout("sh " + APP_PATH + "/bin/autofetchdr.sh")
+							o1, o2, o3 := Shellout("sh " + APP_PATH + "/bin/autofetchdr.sh")
+
+							fmt.Printf("o1: %s, o2 : %s, o3 : %s\n", o1, o2, o3)
 						}
 
 						// Listener waiting ticker

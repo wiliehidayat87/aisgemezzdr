@@ -1,0 +1,10 @@
+[Unit]
+Description=Put DR data to local database
+After=multi-user.target
+
+[Service]
+User=root
+Group=root
+ExecStart=/xmp/th/aisgemezzdr/bin/dr "putauto"
+Restart=on-failure
+RestartSec=3

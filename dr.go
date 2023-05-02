@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,6 +82,79 @@ func main() {
 					put(filedate)
 
 					return nil
+				},
+			},
+			{
+				Name:    "FETCHDRAUTO",
+				Aliases: []string{"fetchdrauto"},
+				Usage:   "fetch data auto from ais",
+				Action: func(cCtx *cli.Context) error {
+
+					//filedate := cCtx.Args().Get(0)
+					executionTime := cCtx.Args().Get(0)
+
+					timeDuration := time.Duration(1)
+
+					for {
+
+						// Write into the log this worker
+						// Initiate the log
+						var log Lib.Logging
+
+						// Setup / Init the log
+						log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
+
+						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
+						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)
+
+						if now > check {
+
+							Shellout("sh " + APP_PATH + "/bin/autofetchdr.sh")
+						}
+
+						// Listener waiting ticker
+						time.Sleep(timeDuration * time.Minute)
+					}
+
+					//return nil
+				},
+			},
+			{
+				Name:    "PUTAUTO",
+				Aliases: []string{"putauto"},
+				Usage:   "put dr via auto loop data to database",
+				Action: func(cCtx *cli.Context) error {
+
+					//filedate := cCtx.Args().Get(0)
+					executionTime := cCtx.Args().Get(0)
+
+					timeDuration := time.Duration(1)
+
+					filedate := Lib.GetYesterdayWithFormat(1, "2006-01-02")
+
+					for {
+
+						// Write into the log this worker
+						// Initiate the log
+						var log Lib.Logging
+
+						// Setup / Init the log
+						log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
+
+						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
+						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)
+
+						if now > check {
+
+							put(filedate)
+
+						}
+
+						// Listener waiting ticker
+						time.Sleep(timeDuration * time.Minute)
+					}
+
+					//return nil
 				},
 			},
 			{
@@ -609,4 +684,14 @@ func move(filedate string) {
 
 		m.Unlock()
 	}
+}
+
+func Shellout(command string) (string, string, error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	return stdout.String(), stderr.String(), err
 }

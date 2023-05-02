@@ -31,6 +31,7 @@ var (
 	DR_PATH             string
 	DESTINATION_DONE_DR string
 	Rabbit              rmqp.AMQP
+	timezone            string
 )
 
 func init() {
@@ -42,7 +43,7 @@ func init() {
 	DESTINATION_DONE_DR = APP_PATH + "/done"
 
 	//initialze the current system time
-	timezone := "Asia/Jakarta"
+	timezone = "Asia/Jakarta"
 	loc, _ := time.LoadLocation(timezone)
 	time.Local = loc // -> this is setting the global timezone
 	os.Setenv("TZ", timezone)
@@ -110,8 +111,8 @@ func main() {
 						// Setup / Init the log
 						//log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
 
-						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
-						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)
+						now, _ := strconv.Atoi(GetDate("200601021504"))
+						check, _ := strconv.Atoi(GetDate("20060102") + executionTime)
 
 						fmt.Printf("Now : %d, check: %d\n", now, check)
 
@@ -140,7 +141,7 @@ func main() {
 
 					timeDuration := time.Duration(1)
 
-					filedate := Lib.GetYesterdayWithFormat(1, "2006-01-02")
+					filedate := GetYesterdayWithFormat(1, "2006-01-02")
 
 					for {
 
@@ -151,8 +152,8 @@ func main() {
 						// Setup / Init the log
 						log.SetUpLog(APP_PATH, Lib.GetUniqId(), "default", "")
 
-						now, _ := strconv.Atoi(Lib.GetDate("200601021504"))
-						check, _ := strconv.Atoi(Lib.GetDate("20060102") + executionTime)
+						now, _ := strconv.Atoi(GetDate("200601021504"))
+						check, _ := strconv.Atoi(GetDate("20060102") + executionTime)
 
 						if now > check {
 
@@ -702,4 +703,34 @@ func Shellout(command string) (string, string, error) {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	return stdout.String(), stderr.String(), err
+}
+
+func GetDate(dateFormat string) string {
+
+	//set timezone,
+	loc, _ := time.LoadLocation(timezone)
+
+	t := time.Now()
+	var now = t.In(loc).Format(dateFormat)
+
+	return now
+}
+
+func GetYesterdayWithFormat(day time.Duration, formatDate string) string {
+
+	//set timezone,
+	loc, _ := time.LoadLocation(timezone)
+
+	//var format = "2006-01-02"
+
+	now := time.Now()
+	var curDate = now.In(loc).Format(formatDate)
+
+	t, _ := time.Parse(formatDate, curDate)
+
+	yesterday := 24 * day
+
+	nano := t.Add(-yesterday * time.Hour).UnixNano()
+
+	return time.Unix(0, nano).Format(formatDate)
 }

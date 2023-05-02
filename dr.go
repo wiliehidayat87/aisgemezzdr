@@ -38,8 +38,8 @@ func init() {
 	var err error
 
 	APP_PATH = "/xmp/th/aisgemezzdr"
-	DR_PATH = "/xmp/th/aisgemezzdr/data"
-	DESTINATION_DONE_DR = "/xmp/th/aisgemezzdr/done"
+	DR_PATH = APP_PATH + "/data"
+	DESTINATION_DONE_DR = APP_PATH + "/done"
 
 	// Setup Database MYSQL
 	CFG.SetMySQL(APP_PATH)
@@ -52,7 +52,7 @@ func init() {
 	if err != nil {
 
 		// panic the function then hard exit
-		fmt.Println(fmt.Sprintf("[x] An Error occured when establishing of the database : %#v", err))
+		fmt.Printf("[x] An Error occured when establishing of the database : %#v\n", err)
 
 		panic(err)
 
@@ -349,11 +349,11 @@ func pushUpdateData(dr Items.DRPullSchedules) {
 
 			if isPublished {
 
-				fmt.Println(fmt.Sprintf("[v] Published into %s: %s, Data: %s ...", qName, corId, request))
+				fmt.Printf("[v] Published into %s: %s, Data: %s ...\n", qName, corId, request)
 
 			} else {
 
-				fmt.Println(fmt.Sprintf("[v] Failed published %s: %s, Data: %s ...", qName, corId, request))
+				fmt.Printf("[v] Failed published %s: %s, Data: %s ...\n", qName, corId, request)
 
 			}
 
@@ -361,9 +361,7 @@ func pushUpdateData(dr Items.DRPullSchedules) {
 
 	} else {
 
-		fmt.Println(
-			fmt.Sprintf("No DR to push"),
-		)
+		fmt.Println("No DR to push")
 	}
 
 	defer m.Unlock()
@@ -410,7 +408,7 @@ func pullUpdate() {
 
 			json.Unmarshal(d.Body, &dr)
 
-			fmt.Println(fmt.Sprintf("Data: %#v ...", dr))
+			fmt.Printf("Data: %#v ...\n", dr)
 
 			// Update DR
 			SQL.PullUpdate(DB, dr)
@@ -418,7 +416,7 @@ func pullUpdate() {
 			// Manual consume queue
 			d.Ack(false)
 
-			defer m.Unlock()
+			m.Unlock()
 
 			// Listener waiting ticker
 			time.Sleep(timeDuration * time.Millisecond)
@@ -554,7 +552,7 @@ func put(filedate string) {
 
 						m1.Lock()
 
-						fmt.Println(fmt.Sprintf("source %s, dr : %s, total line : %d", f.Name(), line, _f))
+						fmt.Printf("source %s, dr : %s, total line : %d\n", f.Name(), line, _f)
 
 						// split string
 						cdata := strings.Split(line, "|")
